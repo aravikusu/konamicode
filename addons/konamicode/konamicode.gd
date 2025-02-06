@@ -42,7 +42,6 @@ func _input(event: InputEvent) -> void:
 
 func _code_checker(event: InputEventKey) -> void:
 	if _relevant_code[_successful_presses] == event.keycode:
-		print(event)
 		_successful_presses += 1
 	else:
 		_successful_presses = 0
