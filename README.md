@@ -20,3 +20,7 @@ When that's done, set up if it should be active by default with the `active` pro
 And finally, just connect the `success` signal!
 
 Easy peasy. Now add your own secrets (or just use it for other key-combination related things)!
+
+## Planned features:
+- A toggle so you can use controller inputs, not just keyboard.
+- A timer so you have to input buttons in quick succession.
