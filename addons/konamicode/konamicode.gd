@@ -2,6 +2,17 @@
 extends Node
 signal success
 
+enum TimeLimitResetMode {
+	## In this mode, the TimeLimit will
+	## start on the first successful inputs and 
+	## not refresh on further successful inputs.
+	##[br]Effectively, a timelimit for the entire combination.
+	NO_REFRESH,
+	## In this mode, the TimeLimit will
+	## reset on every successful input.
+	REFRESH_ON_SUCCESS,
+}
+
 ## The default, the classic.
 const KONAMI_CODE_KEYBOARD: Array[Key] = [
 	KEY_UP, KEY_UP, KEY_DOWN, KEY_DOWN,
@@ -24,13 +35,25 @@ const KONAMI_CODE_CONTROLLER: Array[JoyButton] = [
 ## once successfully triggered.
 @export var fire_only_once: bool = false
 
+@export_category("Time Limit")
+@export var time_limit_mode: bool = false:
+	set(value):
+		time_limit_mode = value
+		property_list_changed.emit()
+
+## Connect your TimeLimit timer here.
+@export var timer: Timer
+## The mode your TimeLimit will have. 
+##[br]See the enum itself for the different modes.
+@export var reset_mode: TimeLimitResetMode = TimeLimitResetMode.NO_REFRESH
+
+@export_category("Code")
 ## Determines if the input will be from a keyboard,
 ## or a controller.
 @export var controller_mode: bool = false:
 	set(value):
 		controller_mode = value
 		property_list_changed.emit()
-
 ## What you want your code to be.
 ##[br]If left empty, it defaults to the Konami Code.
 ##[br]Used when not in `controller_mode`.
@@ -58,6 +81,18 @@ func _validate_property(property: Dictionary) -> void:
 			property.usage &= ~PROPERTY_USAGE_EDITOR
 		else:
 			property.usage |= PROPERTY_USAGE_EDITOR
+	
+	if property.name == "timer":
+		if time_limit_mode:
+			property.usage |= PROPERTY_USAGE_EDITOR
+		else:
+			property.usage &= ~PROPERTY_USAGE_EDITOR
+	
+	if property.name == "reset_mode":
+		if time_limit_mode:
+			property.usage |= PROPERTY_USAGE_EDITOR
+		else:
+			property.usage &= ~PROPERTY_USAGE_EDITOR
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -73,6 +108,13 @@ func _ready() -> void:
 			_relevant_code_keyboard = code_override_keyboard
 		else:
 			_relevant_code_keyboard = KONAMI_CODE_KEYBOARD
+	
+	if time_limit_mode:
+		assert(timer, "In order to use TimeLimitMode you must have a timer connected.")
+
+		timer.autostart = false
+		timer.one_shot = true
+		timer.timeout.connect(_on_timelimit_timeout)
 
 func _input(event: InputEvent) -> void:
 	if !active:
@@ -102,6 +144,7 @@ func _code_checker(event: InputEvent) -> void:
 
 	if actual_code[_successful_presses] == thing_to_check:
 		_successful_presses += 1
+		_handle_timelimit()
 	else:
 		_successful_presses = 0
 	
@@ -111,6 +154,19 @@ func _code_checker(event: InputEvent) -> void:
 
 		if fire_only_once:
 			disable()
+
+func _handle_timelimit() -> void:
+	if !time_limit_mode:
+		return
+	
+	if reset_mode == TimeLimitResetMode.NO_REFRESH \
+	&& _successful_presses > 1:
+		return
+	
+	timer.start()
+
+func _on_timelimit_timeout() -> void:
+	_successful_presses = 0
 
 ## Below are functions you can use to change values.
 ## In case you're not the kinda person who wants to 

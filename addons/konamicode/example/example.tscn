@@ -28,9 +28,11 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_sv2t4")
 
-[node name="KonamiCode" type="Node" parent="."]
+[node name="KonamiCode" type="Node" parent="." node_paths=PackedStringArray("timer")]
 script = ExtResource("1_32n17")
 fire_only_once = true
+time_limit_mode = true
+timer = NodePath("../TimeLimit")
 
 [node name="Instructions" type="Label" parent="."]
 layout_mode = 2
@@ -65,5 +67,7 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "not entered"
 label_settings = SubResource("LabelSettings_b2k5m")
+
+[node name="TimeLimit" type="Timer" parent="."]
 
 [connection signal="success" from="KonamiCode" to="." method="_on_konami_code_success"]
